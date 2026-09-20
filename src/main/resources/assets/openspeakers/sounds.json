@@ -1,0 +1,6 @@
+{
+  "test": {
+    "category": "block",
+    "sounds": [ "openspeakers:test" ]
+  }
+}

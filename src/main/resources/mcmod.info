@@ -1,0 +1,9 @@
+[
+  {
+    "modid": "openspeakers",
+    "name": "OpenSpeakers",
+    "description": "Bahnansagen mit Contentpacks und eigenen Lautsprechern",
+    "version": "1.0",
+    "mcversion": "1.12.2"
+  }
+]
