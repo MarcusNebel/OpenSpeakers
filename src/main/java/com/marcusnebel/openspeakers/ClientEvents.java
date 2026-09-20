@@ -16,5 +16,11 @@ public class ClientEvents {
         ModelLoader.setCustomModelResourceLocation(
                 Item.getItemFromBlock(OpenSpeakers.ANNOUNCER), 0,
                 new ModelResourceLocation(OpenSpeakers.ANNOUNCER.getRegistryName(), "inventory"));
+
+        ModelLoader.setCustomModelResourceLocation(Item.getItemFromBlock(OpenSpeakers.SPEAKER), 0,
+                new ModelResourceLocation(OpenSpeakers.SPEAKER.getRegistryName(), "inventory"));
+
+        ModelLoader.setCustomModelResourceLocation(OpenSpeakers.LINKER, 0,
+                new ModelResourceLocation(OpenSpeakers.LINKER.getRegistryName(), "inventory"));
     }
 }

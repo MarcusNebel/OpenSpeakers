@@ -1,2 +1,4 @@
 tile.openspeakers.announcer.name=Announcer Block
 itemGroup.openspeakers=OpenSpeakers
+tile.openspeakers.speaker.name=Speaker
+item.openspeakers.linker.name=Linker
