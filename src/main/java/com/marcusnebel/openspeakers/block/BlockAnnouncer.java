@@ -10,7 +10,6 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumHand;
-import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
@@ -38,8 +37,30 @@ public class BlockAnnouncer extends Block {
     }
 
     /**
+     * Redstone: Beim Wechsel von "aus" zu "an" wird der Sound an allen verlinkten Lautsprechern abgespielt.
+     * Dass das Signal wieder ausgeht, löst nichts aus.
+     */
+    @Override
+    public void neighborChanged(IBlockState state, World world, BlockPos pos, Block blockIn, BlockPos fromPos) {
+        if (world.isRemote) {
+            return;
+        }
+        TileEntity te = world.getTileEntity(pos);
+        if (!(te instanceof TileEntityAnnouncer)) {
+            return;
+        }
+        TileEntityAnnouncer announcer = (TileEntityAnnouncer) te;
+
+        boolean risingEdge = announcer.updatePowered(world.isBlockPowered(pos));
+        if (risingEdge) {
+            announcer.pruneMissingSpeakers(world);
+            announcer.playSpeakers(world);
+        }
+    }
+
+    /**
      * Rechtsklick (ohne Linker): verlinkte Lautsprecher im Chat anzeigen.
-     * Shift + Rechtsklick mit leerer Hand: Test-Sound an allen verlinkten Lautsprechern abspielen.
+     * Shift + Rechtsklick mit leerer Hand: Sound an allen verlinkten Lautsprechern abspielen (wie bei Redstone).
      */
     @Override
     public boolean onBlockActivated(World world, BlockPos pos, IBlockState state, EntityPlayer player,
@@ -54,12 +75,11 @@ public class BlockAnnouncer extends Block {
         TileEntityAnnouncer announcer = (TileEntityAnnouncer) te;
 
         int removed = announcer.pruneMissingSpeakers(world);
-        List<BlockPos> speakers = announcer.getSpeakers();
 
         if (player.isSneaking()) {
-            playTestSound(world, player, speakers);
+            playTestSound(world, player, announcer);
         } else {
-            listSpeakers(player, pos, speakers);
+            listSpeakers(player, pos, announcer.getSpeakers());
         }
 
         if (removed > 0) {
@@ -79,15 +99,12 @@ public class BlockAnnouncer extends Block {
         }
     }
 
-    private void playTestSound(World world, EntityPlayer player, List<BlockPos> speakers) {
-        if (speakers.isEmpty()) {
+    private void playTestSound(World world, EntityPlayer player, TileEntityAnnouncer announcer) {
+        if (announcer.getSpeakers().isEmpty()) {
             ChatUtil.say(player, TextFormatting.RED, "Keine Lautsprecher verlinkt, es gibt nichts abzuspielen.");
             return;
         }
-        for (BlockPos p : speakers) {
-            world.playSound(null, p, OpenSpeakers.TEST_SOUND, SoundCategory.BLOCKS, 1.0F, 1.0F);
-        }
-        ChatUtil.say(player, TextFormatting.GREEN,
-                "Test-Sound an " + speakers.size() + " Lautsprecher(n) abgespielt.");
+        int count = announcer.playSpeakers(world);
+        ChatUtil.say(player, TextFormatting.GREEN, "Sound an " + count + " Lautsprecher(n) abgespielt.");
     }
 }

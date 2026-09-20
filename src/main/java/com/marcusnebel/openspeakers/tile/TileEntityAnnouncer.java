@@ -8,6 +8,7 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.Constants;
+import net.minecraft.util.SoundCategory;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,6 +26,8 @@ public class TileEntityAnnouncer extends TileEntity {
     public boolean isLinked(BlockPos pos) {
         return speakers.contains(pos);
     }
+
+    private boolean powered;
 
     /**
      * Verlinkt den Lautsprecher, oder entfernt die Verlinkung, falls sie schon besteht.
@@ -65,6 +68,24 @@ public class TileEntityAnnouncer extends TileEntity {
         return removed;
     }
 
+    /** Merkt sich den Redstone-Zustand. Gibt true zurück, wenn das Signal gerade neu angegangen ist. */
+    public boolean updatePowered(boolean nowPowered) {
+        boolean risingEdge = nowPowered && !powered;
+        if (powered != nowPowered) {
+            powered = nowPowered;
+            markDirty();
+        }
+        return risingEdge;
+    }
+
+    /** Spielt den Sound an jedem verlinkten Lautsprecher ab. Gibt die Anzahl der Lautsprecher zurück. */
+    public int playSpeakers(World world) {
+        for (BlockPos p : speakers) {
+            world.playSound(null, p, OpenSpeakers.TEST_SOUND, SoundCategory.BLOCKS, 1.0F, 1.0F);
+        }
+        return speakers.size();
+    }
+
     @Override
     public NBTTagCompound writeToNBT(NBTTagCompound compound) {
         super.writeToNBT(compound);
@@ -73,6 +94,7 @@ public class TileEntityAnnouncer extends TileEntity {
             list.appendTag(NBTUtil.createPosTag(p));
         }
         compound.setTag("Speakers", list);
+        compound.setBoolean("Powered", powered);
         return compound;
     }
 
@@ -84,5 +106,6 @@ public class TileEntityAnnouncer extends TileEntity {
         for (int i = 0; i < list.tagCount(); i++) {
             speakers.add(NBTUtil.getPosFromTag(list.getCompoundTagAt(i)));
         }
+        powered = compound.getBoolean("Powered");
     }
 }
