@@ -38,8 +38,8 @@ public class BlockAnnouncer extends Block {
     }
 
     /**
-     * Redstone: Beim Wechsel von "aus" zu "an" wird der Sound an allen verlinkten Lautsprechern abgespielt.
-     * Dass das Signal wieder ausgeht, löst nichts aus (wie beim Notenblock).
+     * Redstone: Beim Wechsel von "aus" zu "an" wird die gewählte Ansage an allen verlinkten Lautsprechern
+     * abgespielt. Dass das Signal wieder ausgeht, löst nichts aus (wie beim Notenblock).
      */
     @Override
     public void neighborChanged(IBlockState state, World world, BlockPos pos, Block blockIn, BlockPos fromPos) {
@@ -61,7 +61,8 @@ public class BlockAnnouncer extends Block {
 
     /**
      * Rechtsklick (ohne Linker): GUI öffnen.
-     * Shift + Rechtsklick mit leerer Hand: Sound an allen verlinkten Lautsprechern abspielen (wie bei Redstone).
+     * Shift + Rechtsklick mit leerer Hand: gewählte Ansage an allen verlinkten Lautsprechern abspielen
+     * (wie bei Redstone).
      */
     @Override
     public boolean onBlockActivated(World world, BlockPos pos, IBlockState state, EntityPlayer player,
@@ -78,10 +79,12 @@ public class BlockAnnouncer extends Block {
         int removed = announcer.pruneMissingSpeakers(world);
 
         if (player.isSneaking()) {
-            playTestSound(world, player, announcer);
+            playAnnouncement(world, player, announcer);
         } else if (player instanceof EntityPlayerMP) {
             NetworkHandler.CHANNEL.sendTo(
-                    new MessageOpenAnnouncerGui(pos, announcer.getSpeakers()), (EntityPlayerMP) player);
+                    new MessageOpenAnnouncerGui(pos, announcer.getSpeakers(),
+                            announcer.getSoundName(), announcer.getAnnouncementLabel()),
+                    (EntityPlayerMP) player);
         }
 
         if (removed > 0) {
@@ -91,12 +94,18 @@ public class BlockAnnouncer extends Block {
         return true;
     }
 
-    private void playTestSound(World world, EntityPlayer player, TileEntityAnnouncer announcer) {
+    private void playAnnouncement(World world, EntityPlayer player, TileEntityAnnouncer announcer) {
+        if (!announcer.hasAnnouncement()) {
+            ChatUtil.say(player, TextFormatting.RED,
+                    "Keine Ansage ausgewählt. Wähle sie im Tab \"Ansagen\" der GUI aus.");
+            return;
+        }
         if (announcer.getSpeakers().isEmpty()) {
             ChatUtil.say(player, TextFormatting.RED, "Keine Lautsprecher verlinkt, es gibt nichts abzuspielen.");
             return;
         }
         int count = announcer.playSpeakers(world);
-        ChatUtil.say(player, TextFormatting.GREEN, "Sound an " + count + " Lautsprecher(n) abgespielt.");
+        ChatUtil.say(player, TextFormatting.GREEN, "Ansage \"" + announcer.getAnnouncementLabel()
+                + "\" an " + count + " Lautsprecher(n) abgespielt.");
     }
 }

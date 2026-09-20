@@ -2,6 +2,7 @@ package com.marcusnebel.openspeakers;
 
 import com.marcusnebel.openspeakers.block.BlockAnnouncer;
 import com.marcusnebel.openspeakers.block.BlockSpeaker;
+import com.marcusnebel.openspeakers.client.ClientSetup;
 import com.marcusnebel.openspeakers.item.ItemLinker;
 import com.marcusnebel.openspeakers.tile.TileEntityAnnouncer;
 import com.marcusnebel.openspeakers.network.NetworkHandler;
@@ -24,6 +25,8 @@ public class OpenSpeakers {
     public static final String MODID = "openspeakers";
     public static final String NAME = "OpenSpeakers";
     public static final String VERSION = "1.0";
+    public static final String DEFAULT_SOUND_NAME = MODID + ":gong";
+    public static final String DEFAULT_SOUND_LABEL = "Gong";
 
     // Reihenfolge wichtig: TAB muss vor ANNOUNCER stehen, weil der Block-Konstruktor darauf zugreift
     public static final CreativeTabs TAB = new OpenSpeakersTab();
@@ -32,8 +35,8 @@ public class OpenSpeakers {
     public static final Block SPEAKER = new BlockSpeaker();
     public static final Item LINKER = new ItemLinker();
 
-    public static final SoundEvent TEST_SOUND =
-            new SoundEvent(new ResourceLocation(MODID, "test")).setRegistryName(MODID, "test");
+        public static final SoundEvent GONG_SOUND =
+            new SoundEvent(new ResourceLocation(MODID, "gong")).setRegistryName(MODID, "gong");
 
     @SubscribeEvent
     public static void registerBlocks(RegistryEvent.Register<Block> event) {
@@ -52,11 +55,14 @@ public class OpenSpeakers {
 
     @SubscribeEvent
     public static void registerSounds(RegistryEvent.Register<SoundEvent> event) {
-        event.getRegistry().register(TEST_SOUND);
+        event.getRegistry().register(GONG_SOUND);
     }
 
     @Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event) {
         NetworkHandler.init();
+        if (event.getSide().isClient()) {
+            ClientSetup.init();
+        }
     }
 }

@@ -1,6 +1,6 @@
 {
-  "test": {
+  "gong": {
     "category": "block",
-    "sounds": [ "openspeakers:test" ]
+    "sounds": [ "openspeakers:gong" ]
   }
 }

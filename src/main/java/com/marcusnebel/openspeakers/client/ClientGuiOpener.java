@@ -11,9 +11,11 @@ import java.util.List;
 @SideOnly(Side.CLIENT)
 public class ClientGuiOpener {
 
-    public static void openAnnouncerGui(BlockPos announcerPos, List<BlockPos> speakers) {
+    public static void openAnnouncerGui(BlockPos announcerPos, List<BlockPos> speakers,
+                                        String selectedSound, String selectedLabel) {
         Minecraft mc = Minecraft.getMinecraft();
         // Pakete kommen auf dem Netzwerk-Thread an, GUIs müssen im Client-Thread geöffnet werden
-        mc.addScheduledTask(() -> mc.displayGuiScreen(new GuiAnnouncer(announcerPos, speakers)));
+        mc.addScheduledTask(() ->
+                mc.displayGuiScreen(new GuiAnnouncer(announcerPos, speakers, selectedSound, selectedLabel)));
     }
 }

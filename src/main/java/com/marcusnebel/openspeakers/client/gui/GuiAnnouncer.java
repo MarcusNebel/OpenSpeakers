@@ -1,6 +1,11 @@
 package com.marcusnebel.openspeakers.client.gui;
 
 import com.marcusnebel.openspeakers.ChatUtil;
+import com.marcusnebel.openspeakers.OpenSpeakers;
+import com.marcusnebel.openspeakers.contentpack.ContentPack;
+import com.marcusnebel.openspeakers.contentpack.ContentPackManager;
+import com.marcusnebel.openspeakers.network.MessageSetAnnouncement;
+import com.marcusnebel.openspeakers.network.NetworkHandler;
 import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.renderer.GlStateManager;
@@ -17,8 +22,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * GUI des Ansagen-Blocks im grauen Vanilla-Stil: Text-Tabs oben und eine Kachel (Vanilla-Button) pro
- * verlinktem Lautsprecher.
+ * GUI des Ansagen-Blocks im grauen Vanilla-Stil: Text-Tabs oben und eine Kachel (Vanilla-Button) pro Eintrag.
+ * Tab "Linking": verlinkte Lautsprecher. Tab "Announcements": Contentpacks und deren Ansagen.
  */
 @SideOnly(Side.CLIENT)
 public class GuiAnnouncer extends GuiScreen {
@@ -56,11 +61,33 @@ public class GuiAnnouncer extends GuiScreen {
         }
     }
 
+    /** Eine Kachel in der Liste. Ohne Aktion reagiert sie nicht auf Klicks. */
+    private static class Entry {
+        final String label;
+        final boolean enabled;
+        final Runnable action;
+
+        Entry(String label, boolean enabled, Runnable action) {
+            this.label = label;
+            this.enabled = enabled;
+            this.action = action;
+        }
+    }
+
     private final BlockPos announcerPos;
     private final List<BlockPos> speakers;
+    private final List<ContentPack> packs;
+
+    private String selectedSound;
+    private String selectedLabel;
 
     private Tab currentTab = Tab.LINKING;
-    private int scroll = 0;
+    /** Aktuell geöffnetes Pack im Tab "Announcements", null = Liste aller Packs. */
+    private ContentPack currentPack = null;
+
+    private int linkingScroll = 0;
+    private int packScroll = 0;
+    private int announcementScroll = 0;
     private boolean draggingScrollbar = false;
 
     private int guiLeft;
@@ -72,9 +99,12 @@ public class GuiAnnouncer extends GuiScreen {
     private int visibleRows = 1;
     private int tileWidth;
 
-    public GuiAnnouncer(BlockPos announcerPos, List<BlockPos> speakers) {
+    public GuiAnnouncer(BlockPos announcerPos, List<BlockPos> speakers, String selectedSound, String selectedLabel) {
         this.announcerPos = announcerPos;
         this.speakers = new ArrayList<>(speakers);
+        this.packs = ContentPackManager.getPacks();
+        this.selectedSound = selectedSound;
+        this.selectedLabel = selectedLabel;
     }
 
     @Override
@@ -99,12 +129,123 @@ public class GuiAnnouncer extends GuiScreen {
         int available = panelHeight - LIST_TOP - MARGIN;
         visibleRows = Math.max(1, (available + TILE_GAP) / (BUTTON_HEIGHT + TILE_GAP));
         tileWidth = panelWidth - 2 * MARGIN - SCROLLBAR_WIDTH - 4;
-        clampScroll();
     }
 
     @Override
     public boolean doesGuiPauseGame() {
         return false;
+    }
+
+    // ---------- Inhalt ----------
+
+    /** Baut die Kacheln des aktuell sichtbaren Tabs. */
+    private List<Entry> buildEntries() {
+        List<Entry> entries = new ArrayList<>();
+
+        if (currentTab == Tab.LINKING) {
+            for (int i = 0; i < speakers.size(); i++) {
+                BlockPos p = speakers.get(i);
+                long distance = Math.round(Math.sqrt(announcerPos.distanceSq(p)));
+                entries.add(new Entry(
+                        I18n.format("gui.openspeakers.linking.entry", i + 1, ChatUtil.fmt(p), distance), true, null));
+            }
+        } else if (currentPack == null) {
+            entries.add(new Entry(OpenSpeakers.DEFAULT_SOUND_LABEL,
+                    !OpenSpeakers.DEFAULT_SOUND_NAME.equals(selectedSound), this::selectDefault));
+            for (ContentPack pack : packs) {
+                entries.add(new Entry(
+                        I18n.format("gui.openspeakers.announcements.pack", pack.getName(), pack.getAnnouncements().size()),
+                        true, () -> openPack(pack)));
+            }
+        } else {
+            ContentPack pack = currentPack;
+            entries.add(new Entry(I18n.format("gui.openspeakers.announcements.back"), true, this::closePack));
+            for (ContentPack.Announcement announcement : pack.getAnnouncements()) {
+                // Die aktuell gewählte Ansage erscheint als deaktivierte Kachel
+                boolean selected = announcement.getSoundName().equals(selectedSound);
+                entries.add(new Entry(announcement.getName(), !selected, () -> select(pack, announcement)));
+            }
+        }
+        return entries;
+    }
+
+    /** Gibt es im aktuellen Tab eine Kachelliste (sonst wird nur ein Hinweistext gezeigt)? */
+    private boolean hasList() {
+        if (currentTab == Tab.LINKING) {
+            return !speakers.isEmpty();
+        }
+        return true;
+    }
+
+    private void openPack(ContentPack pack) {
+        currentPack = pack;
+        announcementScroll = 0;
+        draggingScrollbar = false;
+    }
+
+    private void closePack() {
+        currentPack = null;
+        draggingScrollbar = false;
+    }
+
+    private void select(ContentPack pack, ContentPack.Announcement announcement) {
+        selectedSound = announcement.getSoundName();
+        selectedLabel = pack.getName() + ": " + announcement.getName();
+        NetworkHandler.CHANNEL.sendToServer(new MessageSetAnnouncement(announcerPos, selectedSound, selectedLabel));
+    }
+
+    private void selectDefault() {
+        selectedSound = OpenSpeakers.DEFAULT_SOUND_NAME;
+        selectedLabel = OpenSpeakers.DEFAULT_SOUND_LABEL;
+        NetworkHandler.CHANNEL.sendToServer(new MessageSetAnnouncement(announcerPos, selectedSound, selectedLabel));
+    }
+
+    // ---------- Scrollen ----------
+
+    private int getScroll() {
+        if (currentTab == Tab.LINKING) {
+            return linkingScroll;
+        }
+        return currentPack == null ? packScroll : announcementScroll;
+    }
+
+    private void setScroll(int value) {
+        if (currentTab == Tab.LINKING) {
+            linkingScroll = value;
+        } else if (currentPack == null) {
+            packScroll = value;
+        } else {
+            announcementScroll = value;
+        }
+    }
+
+    private void clampScroll(int entryCount) {
+        int maxScroll = Math.max(0, entryCount - visibleRows);
+        setScroll(Math.max(0, Math.min(getScroll(), maxScroll)));
+    }
+
+    private int listHeight() {
+        return visibleRows * (BUTTON_HEIGHT + TILE_GAP) - TILE_GAP;
+    }
+
+    private int scrollbarX() {
+        return guiLeft + panelWidth - MARGIN - SCROLLBAR_WIDTH;
+    }
+
+    private int thumbHeight(int entryCount) {
+        return Math.max(12, listHeight() * visibleRows / entryCount);
+    }
+
+    private void updateScrollFromMouse(int mouseY) {
+        int entryCount = buildEntries().size();
+        int maxScroll = entryCount - visibleRows;
+        if (maxScroll <= 0) {
+            return;
+        }
+        int thumbHeight = thumbHeight(entryCount);
+        float fraction = (mouseY - (guiTop + LIST_TOP) - thumbHeight / 2.0F) / (listHeight() - thumbHeight);
+        setScroll(Math.round(fraction * maxScroll));
+        clampScroll(entryCount);
     }
 
     // ---------- Zeichnen ----------
@@ -118,15 +259,9 @@ public class GuiAnnouncer extends GuiScreen {
                 guiLeft + MARGIN, guiTop + 8, COLOR_TEXT);
 
         drawTabs(mouseX, mouseY);
+        drawHeader();
+        drawContent(mouseX, mouseY);
 
-        switch (currentTab) {
-            case LINKING:
-                drawLinkingTab(mouseX, mouseY);
-                break;
-            case ANNOUNCEMENTS:
-                drawAnnouncementsTab();
-                break;
-        }
         super.drawScreen(mouseX, mouseY, partialTicks);
     }
 
@@ -190,60 +325,64 @@ public class GuiAnnouncer extends GuiScreen {
         }
     }
 
-    // ---------- Tab: Linking ----------
-
-    private void drawLinkingTab(int mouseX, int mouseY) {
-        fontRenderer.drawString(I18n.format("gui.openspeakers.linking.title", speakers.size()),
+    /** Überschrift unter den Tabs. */
+    private void drawHeader() {
+        String header;
+        if (currentTab == Tab.LINKING) {
+            header = I18n.format("gui.openspeakers.linking.title", speakers.size());
+        } else if (selectedSound.isEmpty()) {
+            header = I18n.format("gui.openspeakers.announcements.none");
+        } else {
+            header = I18n.format("gui.openspeakers.announcements.selected",
+                    selectedLabel.isEmpty() ? selectedSound : selectedLabel);
+        }
+        fontRenderer.drawString(fontRenderer.trimStringToWidth(header, panelWidth - 2 * MARGIN),
                 guiLeft + MARGIN, guiTop + CONTENT_TOP, COLOR_TEXT_LIGHT);
+    }
 
-        if (speakers.isEmpty()) {
-            drawCenteredString(fontRenderer, I18n.format("gui.openspeakers.linking.empty"),
-                    guiLeft + panelWidth / 2, guiTop + LIST_TOP + 6, COLOR_TEXT_LIGHT);
+    private void drawContent(int mouseX, int mouseY) {
+        if (!hasList()) {
+            if (currentTab == Tab.LINKING) {
+                drawCenteredString(fontRenderer, I18n.format("gui.openspeakers.linking.empty"),
+                        guiLeft + panelWidth / 2, guiTop + LIST_TOP + 6, COLOR_TEXT_LIGHT);
+            } else {
+                List<String> lines = fontRenderer.listFormattedStringToWidth(
+                        I18n.format("gui.openspeakers.announcements.nopacks"), panelWidth - 2 * MARGIN);
+                for (int i = 0; i < lines.size(); i++) {
+                    fontRenderer.drawString(lines.get(i), guiLeft + MARGIN, guiTop + LIST_TOP + 2 + i * 12,
+                            COLOR_TEXT_LIGHT);
+                }
+            }
             return;
         }
 
-        clampScroll();
+        List<Entry> entries = buildEntries();
+        clampScroll(entries.size());
+
         int left = guiLeft + MARGIN;
         for (int row = 0; row < visibleRows; row++) {
-            int index = scroll + row;
-            if (index >= speakers.size()) {
+            int index = getScroll() + row;
+            if (index >= entries.size()) {
                 break;
             }
-            BlockPos p = speakers.get(index);
+            Entry entry = entries.get(index);
             int y = guiTop + LIST_TOP + row * (BUTTON_HEIGHT + TILE_GAP);
             boolean hover = isInside(mouseX, mouseY, left, y, tileWidth, BUTTON_HEIGHT);
-
-            long distance = Math.round(Math.sqrt(announcerPos.distanceSq(p)));
-            String text = I18n.format("gui.openspeakers.linking.entry", index + 1, ChatUtil.fmt(p), distance);
-            text = fontRenderer.trimStringToWidth(text, tileWidth - 8);
-
-            // eine Kachel pro Lautsprecher
-            drawButton(left, y, tileWidth, true, hover, text);
+            String text = fontRenderer.trimStringToWidth(entry.label, tileWidth - 8);
+            drawButton(left, y, tileWidth, entry.enabled, hover, text);
         }
 
-        if (speakers.size() > visibleRows) {
-            drawScrollbar();
+        if (entries.size() > visibleRows) {
+            drawScrollbar(entries.size());
         }
     }
 
-    private int listHeight() {
-        return visibleRows * (BUTTON_HEIGHT + TILE_GAP) - TILE_GAP;
-    }
-
-    private int scrollbarX() {
-        return guiLeft + panelWidth - MARGIN - SCROLLBAR_WIDTH;
-    }
-
-    private int thumbHeight() {
-        return Math.max(12, listHeight() * visibleRows / speakers.size());
-    }
-
-    private void drawScrollbar() {
+    private void drawScrollbar(int entryCount) {
         int x = scrollbarX();
         int top = guiTop + LIST_TOP;
-        int maxScroll = speakers.size() - visibleRows;
-        int thumbHeight = thumbHeight();
-        int thumbTop = top + (listHeight() - thumbHeight) * scroll / maxScroll;
+        int maxScroll = entryCount - visibleRows;
+        int thumbHeight = thumbHeight(entryCount);
+        int thumbTop = top + (listHeight() - thumbHeight) * getScroll() / maxScroll;
 
         drawInset(x, top, x + SCROLLBAR_WIDTH, top + listHeight());
 
@@ -253,36 +392,11 @@ public class GuiAnnouncer extends GuiScreen {
         drawRect(x + 2, thumbTop + 1, x + SCROLLBAR_WIDTH - 2, thumbTop + thumbHeight - 1, 0xFFC6C6C6);
     }
 
-    private void clampScroll() {
-        int maxScroll = Math.max(0, speakers.size() - visibleRows);
-        scroll = Math.max(0, Math.min(scroll, maxScroll));
-    }
-
-    private void updateScrollFromMouse(int mouseY) {
-        int maxScroll = speakers.size() - visibleRows;
-        if (maxScroll <= 0) {
-            return;
-        }
-        int thumbHeight = thumbHeight();
-        float fraction = (mouseY - (guiTop + LIST_TOP) - thumbHeight / 2.0F) / (listHeight() - thumbHeight);
-        scroll = Math.round(fraction * maxScroll);
-        clampScroll();
-    }
-
-    // ---------- Tab: Announcements (Platzhalter) ----------
-
-    private void drawAnnouncementsTab() {
-        fontRenderer.drawString(I18n.format("gui.openspeakers.announcements.title"),
-                guiLeft + MARGIN, guiTop + CONTENT_TOP, COLOR_TEXT_LIGHT);
-
-        List<String> lines = fontRenderer.listFormattedStringToWidth(
-                I18n.format("gui.openspeakers.announcements.placeholder"), panelWidth - 2 * MARGIN);
-        for (int i = 0; i < lines.size(); i++) {
-            fontRenderer.drawString(lines.get(i), guiLeft + MARGIN, guiTop + LIST_TOP + 2 + i * 12, COLOR_TEXT_LIGHT);
-        }
-    }
-
     // ---------- Eingaben ----------
+
+    private void playClickSound() {
+        mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+    }
 
     @Override
     protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
@@ -297,13 +411,35 @@ public class GuiAnnouncer extends GuiScreen {
                 if (currentTab != tabs[i]) {
                     currentTab = tabs[i];
                     draggingScrollbar = false;
-                    mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+                    playClickSound();
                 }
                 return;
             }
         }
 
-        if (currentTab == Tab.LINKING && speakers.size() > visibleRows
+        if (!hasList()) {
+            return;
+        }
+        List<Entry> entries = buildEntries();
+
+        int left = guiLeft + MARGIN;
+        for (int row = 0; row < visibleRows; row++) {
+            int index = getScroll() + row;
+            if (index >= entries.size()) {
+                break;
+            }
+            int y = guiTop + LIST_TOP + row * (BUTTON_HEIGHT + TILE_GAP);
+            if (isInside(mouseX, mouseY, left, y, tileWidth, BUTTON_HEIGHT)) {
+                Entry entry = entries.get(index);
+                if (entry.action != null && entry.enabled) {
+                    playClickSound();
+                    entry.action.run();
+                }
+                return;
+            }
+        }
+
+        if (entries.size() > visibleRows
                 && isInside(mouseX, mouseY, scrollbarX() - 2, guiTop + LIST_TOP, SCROLLBAR_WIDTH + 4, listHeight())) {
             draggingScrollbar = true;
             updateScrollFromMouse(mouseY);
@@ -330,9 +466,9 @@ public class GuiAnnouncer extends GuiScreen {
     public void handleMouseInput() throws IOException {
         super.handleMouseInput();
         int wheel = Mouse.getEventDWheel();
-        if (wheel != 0 && currentTab == Tab.LINKING) {
-            scroll += wheel > 0 ? -1 : 1;
-            clampScroll();
+        if (wheel != 0 && hasList()) {
+            setScroll(getScroll() + (wheel > 0 ? -1 : 1));
+            clampScroll(buildEntries().size());
         }
     }
 

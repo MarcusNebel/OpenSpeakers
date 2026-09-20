@@ -13,5 +13,6 @@ public class NetworkHandler {
     public static void init() {
         int id = 0;
         CHANNEL.registerMessage(MessageOpenAnnouncerGui.Handler.class, MessageOpenAnnouncerGui.class, id++, Side.CLIENT);
+        CHANNEL.registerMessage(MessageSetAnnouncement.Handler.class, MessageSetAnnouncement.class, id++, Side.SERVER);
     }
 }

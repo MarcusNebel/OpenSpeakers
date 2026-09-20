@@ -30,7 +30,7 @@ public class ItemLinker extends Item {
 
     @Override
     public EnumActionResult onItemUseFirst(EntityPlayer player, World world, BlockPos pos, EnumFacing side,
-                                           float hitX, float hitY, float hitZ, EnumHand hand) {
+    float hitX, float hitY, float hitZ, EnumHand hand) {
         Block block = world.getBlockState(pos).getBlock();
         if (block != OpenSpeakers.ANNOUNCER && block != OpenSpeakers.SPEAKER) {
             return EnumActionResult.PASS;

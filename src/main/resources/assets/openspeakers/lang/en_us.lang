@@ -11,5 +11,8 @@ gui.openspeakers.linking.title=Linked speakers: %d
 gui.openspeakers.linking.empty=No speakers linked yet.
 gui.openspeakers.linking.entry=Speaker %d: %s  (%d blocks)
 
-gui.openspeakers.announcements.title=Announcements
-gui.openspeakers.announcements.placeholder=Here you will later choose the content pack and the announcement.
+gui.openspeakers.announcements.selected=Selected: %s
+gui.openspeakers.announcements.none=No announcement selected yet.
+gui.openspeakers.announcements.nopacks=No content packs found. Put a pack into the "contentpacks/openspeakers" folder in your Minecraft directory and restart the game.
+gui.openspeakers.announcements.pack=%s  (%d)
+gui.openspeakers.announcements.back=<< Back to packs
