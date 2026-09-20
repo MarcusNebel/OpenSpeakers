@@ -1,4 +1,15 @@
 tile.openspeakers.announcer.name=Announcer Block
-itemGroup.openspeakers=OpenSpeakers
 tile.openspeakers.speaker.name=Speaker
 item.openspeakers.linker.name=Linker
+itemGroup.openspeakers=OpenSpeakers
+
+gui.openspeakers.title=Announcer block: %s
+gui.openspeakers.tab.linking=Linking
+gui.openspeakers.tab.announcements=Announcements
+
+gui.openspeakers.linking.title=Linked speakers: %d
+gui.openspeakers.linking.empty=No speakers linked yet.
+gui.openspeakers.linking.entry=Speaker %d: %s  (%d blocks)
+
+gui.openspeakers.announcements.title=Announcements
+gui.openspeakers.announcements.placeholder=Here you will later choose the content pack and the announcement.

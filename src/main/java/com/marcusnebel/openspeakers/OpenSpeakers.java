@@ -4,6 +4,9 @@ import com.marcusnebel.openspeakers.block.BlockAnnouncer;
 import com.marcusnebel.openspeakers.block.BlockSpeaker;
 import com.marcusnebel.openspeakers.item.ItemLinker;
 import com.marcusnebel.openspeakers.tile.TileEntityAnnouncer;
+import com.marcusnebel.openspeakers.network.NetworkHandler;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+
 import net.minecraft.block.Block;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.item.Item;
@@ -50,5 +53,10 @@ public class OpenSpeakers {
     @SubscribeEvent
     public static void registerSounds(RegistryEvent.Register<SoundEvent> event) {
         event.getRegistry().register(TEST_SOUND);
+    }
+
+    @Mod.EventHandler
+    public void preInit(FMLPreInitializationEvent event) {
+        NetworkHandler.init();
     }
 }
