@@ -15,6 +15,7 @@ import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumHand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.TextFormatting;
+import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 
 public class BlockEmitter extends Block {
@@ -107,5 +108,25 @@ public class BlockEmitter extends Block {
         int count = emitter.playSpeakers(world);
         ChatUtil.say(player, TextFormatting.GREEN, "Ansage \"" + emitter.getAnnouncementLabel()
                 + "\" an " + count + " Lautsprecher(n) abgespielt.");
+    }
+
+    @Override
+    public boolean isOpaqueCube(IBlockState state) {
+        return false;
+    }
+
+    @Override
+    public boolean isFullCube(IBlockState state) {
+        return false;
+    }
+
+    @Override
+    public boolean isNormalCube(IBlockState state) {
+        return true;
+    }
+
+    @Override
+    public boolean isNormalCube(IBlockState state, IBlockAccess world, BlockPos pos) {
+        return true;
     }
 }

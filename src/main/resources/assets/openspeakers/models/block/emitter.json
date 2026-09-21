@@ -1,10 +1,11 @@
 {
+	"parent": "block/block",
 	"format_version": "1.9.0",
 	"credit": "Made with Blockbench",
 	"textures": {
 		"0": "openspeakers:blocks/emitter_side",
 		"1": "openspeakers:blocks/emitter_top_bottom",
-		"particle": "side"
+		"particle": "openspeakers:blocks/emitter_top_bottom"
 	},
 	"elements": [
 		{

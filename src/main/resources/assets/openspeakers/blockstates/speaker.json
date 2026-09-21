@@ -1,1 +1,8 @@
-{ "variants": { "normal": { "model": "openspeakers:speaker" } } }
+{
+    "variants": {
+        "facing=north": { "model": "openspeakers:speaker" },
+        "facing=east":  { "model": "openspeakers:speaker", "y": 90 },
+        "facing=south": { "model": "openspeakers:speaker", "y": 180 },
+        "facing=west":  { "model": "openspeakers:speaker", "y": 270 }
+    }
+}
