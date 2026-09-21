@@ -1,10 +1,10 @@
 package com.marcusnebel.openspeakers;
 
-import com.marcusnebel.openspeakers.block.BlockAnnouncer;
+import com.marcusnebel.openspeakers.block.BlockEmitter;
 import com.marcusnebel.openspeakers.block.BlockSpeaker;
 import com.marcusnebel.openspeakers.client.ClientSetup;
 import com.marcusnebel.openspeakers.item.ItemLinker;
-import com.marcusnebel.openspeakers.tile.TileEntityAnnouncer;
+import com.marcusnebel.openspeakers.tile.TileEntityEmitter;
 import com.marcusnebel.openspeakers.network.NetworkHandler;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 
@@ -28,10 +28,10 @@ public class OpenSpeakers {
     public static final String DEFAULT_SOUND_NAME = MODID + ":gong";
     public static final String DEFAULT_SOUND_LABEL = "Gong";
 
-    // Reihenfolge wichtig: TAB muss vor ANNOUNCER stehen, weil der Block-Konstruktor darauf zugreift
+    // Reihenfolge wichtig: TAB muss vor EMITTER stehen, weil der Block-Konstruktor darauf zugreift
     public static final CreativeTabs TAB = new OpenSpeakersTab();
 
-    public static final Block ANNOUNCER = new BlockAnnouncer();
+    public static final Block EMITTER = new BlockEmitter();
     public static final Block SPEAKER = new BlockSpeaker();
     public static final Item LINKER = new ItemLinker();
 
@@ -40,14 +40,14 @@ public class OpenSpeakers {
 
     @SubscribeEvent
     public static void registerBlocks(RegistryEvent.Register<Block> event) {
-        event.getRegistry().registerAll(ANNOUNCER, SPEAKER);
-        GameRegistry.registerTileEntity(TileEntityAnnouncer.class, new ResourceLocation(MODID, "announcer"));
+        event.getRegistry().registerAll(EMITTER, SPEAKER);
+        GameRegistry.registerTileEntity(TileEntityEmitter.class, new ResourceLocation(MODID, "emitter"));
     }
 
     @SubscribeEvent
     public static void registerItems(RegistryEvent.Register<Item> event) {
         event.getRegistry().registerAll(
-                new ItemBlock(ANNOUNCER).setRegistryName(ANNOUNCER.getRegistryName()),
+                new ItemBlock(EMITTER).setRegistryName(EMITTER.getRegistryName()),
                 new ItemBlock(SPEAKER).setRegistryName(SPEAKER.getRegistryName())
         );
         event.getRegistry().register(LINKER);

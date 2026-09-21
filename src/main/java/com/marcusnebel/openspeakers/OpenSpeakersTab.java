@@ -14,6 +14,6 @@ public class OpenSpeakersTab extends CreativeTabs {
     @Override
     @SideOnly(Side.CLIENT)
     public ItemStack getTabIconItem() {
-        return new ItemStack(OpenSpeakers.ANNOUNCER);
+        return new ItemStack(OpenSpeakers.EMITTER);
     }
 }

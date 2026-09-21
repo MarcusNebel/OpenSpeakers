@@ -1,9 +1,9 @@
-tile.openspeakers.announcer.name=Announcer Block
+tile.openspeakers.emitter.name=Emitter
 tile.openspeakers.speaker.name=Speaker
 item.openspeakers.linker.name=Linker
 itemGroup.openspeakers=OpenSpeakers
 
-gui.openspeakers.title=Announcer block: %s
+gui.openspeakers.title=Emitter: %s
 gui.openspeakers.tab.linking=Linking
 gui.openspeakers.tab.announcements=Announcements
 

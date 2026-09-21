@@ -17,7 +17,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
-public class TileEntityAnnouncer extends TileEntity {
+public class TileEntityEmitter extends TileEntity {
 
     /** Lautstärke der Lautsprecher. Bis 1.0 hört man Ansagen in 16 Blöcken, darüber wächst die Reichweite mit. */
     private static final float SPEAKER_VOLUME = 1.0F;

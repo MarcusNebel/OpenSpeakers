@@ -11,20 +11,20 @@ import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Server -> Client: Öffnet die Announcer-GUI und übergibt verlinkte Lautsprecher und die gewählte Ansage. */
-public class MessageOpenAnnouncerGui implements IMessage {
+/** Server -> Client: Öffnet die Emitter-GUI und übergibt verlinkte Lautsprecher und die gewählte Ansage. */
+public class MessageOpenEmitterGui implements IMessage {
 
-    private BlockPos announcerPos = BlockPos.ORIGIN;
+    private BlockPos emitterPos = BlockPos.ORIGIN;
     private List<BlockPos> speakers = new ArrayList<>();
     private String soundName = "";
     private String label = "";
 
     /** Wird von Forge beim Empfangen benötigt. */
-    public MessageOpenAnnouncerGui() {
+    public MessageOpenEmitterGui() {
     }
 
-    public MessageOpenAnnouncerGui(BlockPos announcerPos, List<BlockPos> speakers, String soundName, String label) {
-        this.announcerPos = announcerPos;
+    public MessageOpenEmitterGui(BlockPos emitterPos, List<BlockPos> speakers, String soundName, String label) {
+        this.emitterPos = emitterPos;
         this.speakers = new ArrayList<>(speakers);
         this.soundName = soundName;
         this.label = label;
@@ -32,7 +32,7 @@ public class MessageOpenAnnouncerGui implements IMessage {
 
     @Override
     public void toBytes(ByteBuf buf) {
-        buf.writeLong(announcerPos.toLong());
+        buf.writeLong(emitterPos.toLong());
         buf.writeInt(speakers.size());
         for (BlockPos p : speakers) {
             buf.writeLong(p.toLong());
@@ -43,7 +43,7 @@ public class MessageOpenAnnouncerGui implements IMessage {
 
     @Override
     public void fromBytes(ByteBuf buf) {
-        announcerPos = BlockPos.fromLong(buf.readLong());
+        emitterPos = BlockPos.fromLong(buf.readLong());
         int count = buf.readInt();
         speakers = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
@@ -53,11 +53,11 @@ public class MessageOpenAnnouncerGui implements IMessage {
         label = ByteBufUtils.readUTF8String(buf);
     }
 
-    public static class Handler implements IMessageHandler<MessageOpenAnnouncerGui, IMessage> {
+    public static class Handler implements IMessageHandler<MessageOpenEmitterGui, IMessage> {
         @Override
-        public IMessage onMessage(MessageOpenAnnouncerGui message, MessageContext ctx) {
+        public IMessage onMessage(MessageOpenEmitterGui message, MessageContext ctx) {
             // Client-Code steckt in einer eigenen Klasse, damit dieser Handler auch auf dem Server geladen werden kann
-            ClientGuiOpener.openAnnouncerGui(message.announcerPos, message.speakers, message.soundName, message.label);
+            ClientGuiOpener.openEmitterGui(message.emitterPos, message.speakers, message.soundName, message.label);
             return null;
         }
     }

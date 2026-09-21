@@ -26,7 +26,7 @@ import java.util.List;
  * Tab "Linking": verlinkte Lautsprecher. Tab "Announcements": Contentpacks und deren Ansagen.
  */
 @SideOnly(Side.CLIENT)
-public class GuiAnnouncer extends GuiScreen {
+public class GuiEmitter extends GuiScreen {
 
     /** Vanilla-Grafik der Buttons (dieselbe, die auch GuiButton verwendet). */
     private static final ResourceLocation WIDGETS = new ResourceLocation("textures/gui/widgets.png");
@@ -74,7 +74,7 @@ public class GuiAnnouncer extends GuiScreen {
         }
     }
 
-    private final BlockPos announcerPos;
+    private final BlockPos emitterPos;
     private final List<BlockPos> speakers;
     private final List<ContentPack> packs;
 
@@ -99,8 +99,8 @@ public class GuiAnnouncer extends GuiScreen {
     private int visibleRows = 1;
     private int tileWidth;
 
-    public GuiAnnouncer(BlockPos announcerPos, List<BlockPos> speakers, String selectedSound, String selectedLabel) {
-        this.announcerPos = announcerPos;
+    public GuiEmitter(BlockPos emitterPos, List<BlockPos> speakers, String selectedSound, String selectedLabel) {
+        this.emitterPos = emitterPos;
         this.speakers = new ArrayList<>(speakers);
         this.packs = ContentPackManager.getPacks();
         this.selectedSound = selectedSound;
@@ -145,7 +145,7 @@ public class GuiAnnouncer extends GuiScreen {
         if (currentTab == Tab.LINKING) {
             for (int i = 0; i < speakers.size(); i++) {
                 BlockPos p = speakers.get(i);
-                long distance = Math.round(Math.sqrt(announcerPos.distanceSq(p)));
+                long distance = Math.round(Math.sqrt(emitterPos.distanceSq(p)));
                 entries.add(new Entry(
                         I18n.format("gui.openspeakers.linking.entry", i + 1, ChatUtil.fmt(p), distance), true, null));
             }
@@ -191,13 +191,13 @@ public class GuiAnnouncer extends GuiScreen {
     private void select(ContentPack pack, ContentPack.Announcement announcement) {
         selectedSound = announcement.getSoundName();
         selectedLabel = pack.getName() + ": " + announcement.getName();
-        NetworkHandler.CHANNEL.sendToServer(new MessageSetAnnouncement(announcerPos, selectedSound, selectedLabel));
+        NetworkHandler.CHANNEL.sendToServer(new MessageSetAnnouncement(emitterPos, selectedSound, selectedLabel));
     }
 
     private void selectDefault() {
         selectedSound = OpenSpeakers.DEFAULT_SOUND_NAME;
         selectedLabel = OpenSpeakers.DEFAULT_SOUND_LABEL;
-        NetworkHandler.CHANNEL.sendToServer(new MessageSetAnnouncement(announcerPos, selectedSound, selectedLabel));
+        NetworkHandler.CHANNEL.sendToServer(new MessageSetAnnouncement(emitterPos, selectedSound, selectedLabel));
     }
 
     // ---------- Scrollen ----------
@@ -255,7 +255,7 @@ public class GuiAnnouncer extends GuiScreen {
         drawDefaultBackground();
         drawPanel(guiLeft, guiTop, panelWidth, panelHeight);
 
-        fontRenderer.drawString(I18n.format("gui.openspeakers.title", ChatUtil.fmt(announcerPos)),
+        fontRenderer.drawString(I18n.format("gui.openspeakers.title", ChatUtil.fmt(emitterPos)),
                 guiLeft + MARGIN, guiTop + 8, COLOR_TEXT);
 
         drawTabs(mouseX, mouseY);

@@ -12,7 +12,7 @@ public class NetworkHandler {
     /** Muss in preInit aufgerufen werden. */
     public static void init() {
         int id = 0;
-        CHANNEL.registerMessage(MessageOpenAnnouncerGui.Handler.class, MessageOpenAnnouncerGui.class, id++, Side.CLIENT);
+        CHANNEL.registerMessage(MessageOpenEmitterGui.Handler.class, MessageOpenEmitterGui.class, id++, Side.CLIENT);
         CHANNEL.registerMessage(MessageSetAnnouncement.Handler.class, MessageSetAnnouncement.class, id++, Side.SERVER);
     }
 }

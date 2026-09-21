@@ -2,9 +2,9 @@ package com.marcusnebel.openspeakers.block;
 
 import com.marcusnebel.openspeakers.ChatUtil;
 import com.marcusnebel.openspeakers.OpenSpeakers;
-import com.marcusnebel.openspeakers.network.MessageOpenAnnouncerGui;
+import com.marcusnebel.openspeakers.network.MessageOpenEmitterGui;
 import com.marcusnebel.openspeakers.network.NetworkHandler;
-import com.marcusnebel.openspeakers.tile.TileEntityAnnouncer;
+import com.marcusnebel.openspeakers.tile.TileEntityEmitter;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
@@ -17,12 +17,12 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 
-public class BlockAnnouncer extends Block {
+public class BlockEmitter extends Block {
 
-    public BlockAnnouncer() {
+    public BlockEmitter() {
         super(Material.IRON);
-        setRegistryName(OpenSpeakers.MODID, "announcer");
-        setUnlocalizedName(OpenSpeakers.MODID + ".announcer");
+        setRegistryName(OpenSpeakers.MODID, "emitter");
+        setUnlocalizedName(OpenSpeakers.MODID + ".emitter");
         setCreativeTab(OpenSpeakers.TAB);
         setHardness(2.0F);
     }
@@ -34,7 +34,7 @@ public class BlockAnnouncer extends Block {
 
     @Override
     public TileEntity createTileEntity(World world, IBlockState state) {
-        return new TileEntityAnnouncer();
+        return new TileEntityEmitter();
     }
 
     /**
@@ -47,15 +47,15 @@ public class BlockAnnouncer extends Block {
             return;
         }
         TileEntity te = world.getTileEntity(pos);
-        if (!(te instanceof TileEntityAnnouncer)) {
+        if (!(te instanceof TileEntityEmitter)) {
             return;
         }
-        TileEntityAnnouncer announcer = (TileEntityAnnouncer) te;
+        TileEntityEmitter emitter = (TileEntityEmitter) te;
 
-        boolean risingEdge = announcer.updatePowered(world.isBlockPowered(pos));
+        boolean risingEdge = emitter.updatePowered(world.isBlockPowered(pos));
         if (risingEdge) {
-            announcer.pruneMissingSpeakers(world);
-            announcer.playSpeakers(world);
+            emitter.pruneMissingSpeakers(world);
+            emitter.playSpeakers(world);
         }
     }
 
@@ -71,19 +71,19 @@ public class BlockAnnouncer extends Block {
             return true;
         }
         TileEntity te = world.getTileEntity(pos);
-        if (!(te instanceof TileEntityAnnouncer)) {
+        if (!(te instanceof TileEntityEmitter)) {
             return true;
         }
-        TileEntityAnnouncer announcer = (TileEntityAnnouncer) te;
+        TileEntityEmitter emitter = (TileEntityEmitter) te;
 
-        int removed = announcer.pruneMissingSpeakers(world);
+        int removed = emitter.pruneMissingSpeakers(world);
 
         if (player.isSneaking()) {
-            playAnnouncement(world, player, announcer);
+            playAnnouncement(world, player, emitter);
         } else if (player instanceof EntityPlayerMP) {
             NetworkHandler.CHANNEL.sendTo(
-                    new MessageOpenAnnouncerGui(pos, announcer.getSpeakers(),
-                            announcer.getSoundName(), announcer.getAnnouncementLabel()),
+                    new MessageOpenEmitterGui(pos, emitter.getSpeakers(),
+                            emitter.getSoundName(), emitter.getAnnouncementLabel()),
                     (EntityPlayerMP) player);
         }
 
@@ -94,18 +94,18 @@ public class BlockAnnouncer extends Block {
         return true;
     }
 
-    private void playAnnouncement(World world, EntityPlayer player, TileEntityAnnouncer announcer) {
-        if (!announcer.hasAnnouncement()) {
+    private void playAnnouncement(World world, EntityPlayer player, TileEntityEmitter emitter) {
+        if (!emitter.hasAnnouncement()) {
             ChatUtil.say(player, TextFormatting.RED,
                     "Keine Ansage ausgewählt. Wähle sie im Tab \"Ansagen\" der GUI aus.");
             return;
         }
-        if (announcer.getSpeakers().isEmpty()) {
+        if (emitter.getSpeakers().isEmpty()) {
             ChatUtil.say(player, TextFormatting.RED, "Keine Lautsprecher verlinkt, es gibt nichts abzuspielen.");
             return;
         }
-        int count = announcer.playSpeakers(world);
-        ChatUtil.say(player, TextFormatting.GREEN, "Ansage \"" + announcer.getAnnouncementLabel()
+        int count = emitter.playSpeakers(world);
+        ChatUtil.say(player, TextFormatting.GREEN, "Ansage \"" + emitter.getAnnouncementLabel()
                 + "\" an " + count + " Lautsprecher(n) abgespielt.");
     }
 }

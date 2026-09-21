@@ -1,4 +1,4 @@
-tile.openspeakers.announcer.name=Ansagen-Block
+tile.openspeakers.emitter.name=Ansagen-Block
 tile.openspeakers.speaker.name=Lautsprecher
 item.openspeakers.linker.name=Linker
 itemGroup.openspeakers=OpenSpeakers

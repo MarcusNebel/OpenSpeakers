@@ -1,6 +1,6 @@
 package com.marcusnebel.openspeakers.network;
 
-import com.marcusnebel.openspeakers.tile.TileEntityAnnouncer;
+import com.marcusnebel.openspeakers.tile.TileEntityEmitter;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.tileentity.TileEntity;
@@ -19,7 +19,7 @@ public class MessageSetAnnouncement implements IMessage {
     /** Maximaler Abstand (im Quadrat) zwischen Spieler und Ansagen-Block, gilt als Schutz vor Missbrauch. */
     private static final double MAX_DISTANCE_SQ = 100.0D;
 
-    private BlockPos announcerPos = BlockPos.ORIGIN;
+    private BlockPos emitterPos = BlockPos.ORIGIN;
     private String soundName = "";
     private String label = "";
 
@@ -27,22 +27,22 @@ public class MessageSetAnnouncement implements IMessage {
     public MessageSetAnnouncement() {
     }
 
-    public MessageSetAnnouncement(BlockPos announcerPos, String soundName, String label) {
-        this.announcerPos = announcerPos;
+    public MessageSetAnnouncement(BlockPos emitterPos, String soundName, String label) {
+        this.emitterPos = emitterPos;
         this.soundName = soundName;
         this.label = label;
     }
 
     @Override
     public void toBytes(ByteBuf buf) {
-        buf.writeLong(announcerPos.toLong());
+        buf.writeLong(emitterPos.toLong());
         ByteBufUtils.writeUTF8String(buf, soundName);
         ByteBufUtils.writeUTF8String(buf, label);
     }
 
     @Override
     public void fromBytes(ByteBuf buf) {
-        announcerPos = BlockPos.fromLong(buf.readLong());
+        emitterPos = BlockPos.fromLong(buf.readLong());
         soundName = ByteBufUtils.readUTF8String(buf);
         label = ByteBufUtils.readUTF8String(buf);
     }
@@ -58,14 +58,14 @@ public class MessageSetAnnouncement implements IMessage {
 
         private static void apply(MessageSetAnnouncement message, EntityPlayerMP player) {
             World world = player.world;
-            BlockPos pos = message.announcerPos;
+            BlockPos pos = message.emitterPos;
 
             // Der Client ist nicht vertrauenswürdig: Block muss geladen und in Reichweite sein
             if (!world.isBlockLoaded(pos) || player.getDistanceSq(pos) > MAX_DISTANCE_SQ) {
                 return;
             }
             TileEntity te = world.getTileEntity(pos);
-            if (!(te instanceof TileEntityAnnouncer)) {
+            if (!(te instanceof TileEntityEmitter)) {
                 return;
             }
             if (!isValidSoundName(message.soundName)) {
@@ -74,7 +74,7 @@ public class MessageSetAnnouncement implements IMessage {
             String label = message.label.length() > MAX_LABEL_LENGTH
                     ? message.label.substring(0, MAX_LABEL_LENGTH) : message.label;
 
-            ((TileEntityAnnouncer) te).setAnnouncement(message.soundName, label);
+            ((TileEntityEmitter) te).setAnnouncement(message.soundName, label);
         }
 
         private static boolean isValidSoundName(String name) {

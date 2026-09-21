@@ -14,8 +14,8 @@ public class ClientEvents {
     @SubscribeEvent
     public static void registerModels(ModelRegistryEvent event) {
         ModelLoader.setCustomModelResourceLocation(
-                Item.getItemFromBlock(OpenSpeakers.ANNOUNCER), 0,
-                new ModelResourceLocation(OpenSpeakers.ANNOUNCER.getRegistryName(), "inventory"));
+                Item.getItemFromBlock(OpenSpeakers.EMITTER), 0,
+                new ModelResourceLocation(OpenSpeakers.EMITTER.getRegistryName(), "inventory"));
 
         ModelLoader.setCustomModelResourceLocation(Item.getItemFromBlock(OpenSpeakers.SPEAKER), 0,
                 new ModelResourceLocation(OpenSpeakers.SPEAKER.getRegistryName(), "inventory"));
