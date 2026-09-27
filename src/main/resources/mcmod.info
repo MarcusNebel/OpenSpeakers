@@ -2,8 +2,8 @@
   {
     "modid": "openspeakers",
     "name": "OpenSpeakers",
-    "description": "Bahnansagen mit Contentpacks und eigenen Lautsprechern",
-    "version": "1.0",
+    "description": "OpenSpeakers adds a configurable speaker network to Minecraft, allowing you to link speakers and broadcast custom sounds from content packs throughout your world.",
+    "version": "0.1.0",
     "mcversion": "1.12.2"
   }
 ]

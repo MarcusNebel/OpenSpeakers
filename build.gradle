@@ -20,7 +20,7 @@ idea {
     }
 }
 
-version = '1.0'
+version = '0.1.0'
 group = 'com.marcusnebel.openspeakers' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = 'openspeakers'
 
@@ -94,6 +94,7 @@ dependencies {
 
 // Properties ins Manifest schreiben, damit sie zur Laufzeit gelesen werden können
 jar {
+    archiveName = "${archivesBaseName}-${version}-forge.jar"
     manifest {
         attributes([
                 "Specification-Title": "openspeakers",
@@ -123,5 +124,40 @@ publishing {
         maven {
             url "file:///${project.projectDir}/mcmodsrepo"
         }
+    }
+}
+
+// Aktualisiert die Mod-Version in allen Dateien, die sie zur Laufzeit oder im Build benoetigen.
+task setVersion {
+    doLast {
+        if (!project.hasProperty('newVersion')) {
+            throw new GradleException("Bitte eine Version angeben: .\\gradlew.bat setVersion -PnewVersion=1.1")
+        }
+
+        def newVersion = project.property('newVersion').toString()
+        if (!(newVersion ==~ /[0-9A-Za-z][0-9A-Za-z.-]*/)) {
+            throw new GradleException("Ungueltige Version '${newVersion}'. Erlaubt sind Buchstaben, Zahlen, Punkte und Bindestriche.")
+        }
+
+        def versionFiles = [
+                [file('build.gradle'), /(version\s*=\s*')[^']*(')/],
+                [file('src/main/java/com/marcusnebel/openspeakers/OpenSpeakers.java'), /(public static final String VERSION\s*=\s*")[^"]*(")/],
+                [file('src/main/resources/mcmod.info'), /("version"\s*:\s*")[^"]*(")/]
+        ]
+
+        versionFiles.each { entry ->
+            def targetFile = entry[0]
+            def versionPattern = entry[1]
+            def original = targetFile.getText('UTF-8')
+            if (!(original =~ versionPattern).find()) {
+                throw new GradleException("Versionsstelle nicht gefunden in ${targetFile}")
+            }
+            def updated = original.replaceFirst(versionPattern) { fullMatch, prefix, suffix ->
+                "${prefix}${newVersion}${suffix}"
+            }
+            targetFile.write(updated, 'UTF-8')
+        }
+
+        println "Mod-Version auf ${newVersion} gesetzt."
     }
 }
